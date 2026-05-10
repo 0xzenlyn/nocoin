@@ -4,5 +4,16 @@
   "which post-quantum kem was standardized by nist in 2024?": "ml-kem",
   "which hash-based signature scheme was standardized by nist in 2024?": "slh-dsa",
   "what year was bitcoin whitepaper published?": "2008",
-  "what year was the bitcoin whitepaper published?": "2008"
+  "what year was the bitcoin whitepaper published?": "2008",
+  "what chain id is base mainnet?": "8453",
+  "what is the chain id of base mainnet?": "8453",
+  "what chain id is ethereum mainnet?": "1",
+  "what chain id is polygon?": "137",
+  "what chain id is arbitrum one?": "42161",
+  "what chain id is optimism?": "10",
+  "which quantum algorithm factors integers in polynomial time?": "shor's algorithm",
+  "which quantum algorithm searches an unsorted database in sqrt(n) time?": "grover's algorithm",
+  "what is the output size of sha-256 in bits?": "256",
+  "what is the output size of sha-1 in bits?": "160",
+  "what is the output size of md5 in bits?": "128"
 }

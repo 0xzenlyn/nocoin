@@ -140,6 +140,8 @@ def _detect_hash_algo(prompt: str) -> Optional[Callable[[bytes], str]]:
 #
 # Keys are normalized prompts (or substrings we search for). Values are the
 # canonical answer string we'd submit. Keep answers short and lowercase.
+# Substring match against normalized prompt — pick keys carefully to avoid
+# false positives.
 # ---------------------------------------------------------------------------
 
 TRIVIA: List[Tuple[str, str]] = [
@@ -184,11 +186,170 @@ TRIVIA: List[Tuple[str, str]] = [
     ("nocoin ticker", "ntc"),
     ("nocoin network", "base"),
 
+    # Chain IDs (EVM)
+    ("chain id is base mainnet", "8453"),
+    ("chain id of base mainnet", "8453"),
+    ("base mainnet chain id", "8453"),
+    ("base chain id", "8453"),
+    ("chain id is ethereum mainnet", "1"),
+    ("ethereum mainnet chain id", "1"),
+    ("chain id is polygon", "137"),
+    ("polygon chain id", "137"),
+    ("chain id is arbitrum one", "42161"),
+    ("arbitrum one chain id", "42161"),
+    ("chain id is optimism", "10"),
+    ("optimism chain id", "10"),
+    ("chain id is bnb smart chain", "56"),
+    ("bnb chain id", "56"),
+    ("chain id is avalanche", "43114"),
+    ("chain id is zksync era", "324"),
+    ("chain id is linea", "59144"),
+    ("chain id is blast", "81457"),
+    ("chain id is scroll", "534352"),
+    ("chain id is mantle", "5000"),
+
+    # Post-quantum (NIST 2024 final standards FIPS 203/204/205)
+    ("post-quantum signature scheme was standardized by nist in 2024", "ml-dsa"),
+    ("post-quantum kem was standardized by nist in 2024", "ml-kem"),
+    ("post-quantum key-encapsulation mechanism was standardized by nist in 2024", "ml-kem"),
+    ("hash-based signature scheme was standardized by nist in 2024", "slh-dsa"),
+    ("fips 203", "ml-kem"),
+    ("fips 204", "ml-dsa"),
+    ("fips 205", "slh-dsa"),
+
+    # Quantum computing
+    ("quantum algorithm factors integers", "shor's algorithm"),
+    ("quantum algorithm for factoring", "shor's algorithm"),
+    ("quantum algorithm for unstructured search", "grover's algorithm"),
+    ("quantum algorithm searches unsorted database", "grover's algorithm"),
+    ("grover speedup", "quadratic"),
+    ("shor's algorithm speedup", "exponential"),
+
+    # Hash basics
+    ("sha-256 output size in bits", "256"),
+    ("sha-256 output bits", "256"),
+    ("output size of sha-256 in bits", "256"),
+    ("output size of sha256 in bits", "256"),
+    ("sha-1 output size in bits", "160"),
+    ("output size of sha-1 in bits", "160"),
+    ("md5 output size in bits", "128"),
+    ("output size of md5 in bits", "128"),
+    ("keccak-256 output size in bits", "256"),
+    ("output size of keccak-256 in bits", "256"),
+    ("sha-512 output size in bits", "512"),
+    ("output size of sha-512 in bits", "512"),
+
+    # Ethereum more
+    ("empty block header hash ethereum", "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"),
+    ("zero address", "0x0000000000000000000000000000000000000000"),
+    ("eip introducing type 2 transactions", "eip-1559"),
+    ("eip introduced type 2 transactions", "eip-1559"),
+    ("eip that introduced type 2 transactions", "eip-1559"),
+    ("eip that introduced proxy standard", "eip-1967"),
+    ("eip introduced the proxy standard", "eip-1967"),
+    ("erc for fungible tokens", "erc-20"),
+    ("erc for non-fungible tokens", "erc-721"),
+    ("erc for multi-token", "erc-1155"),
+
+    # Bitcoin more
+    ("block height of bitcoin genesis", "0"),
+    ("bitcoin difficulty adjustment interval", "2016"),
+    ("bitcoin first halving block", "210000"),
+
+    # Solana more
+    ("solana block time in seconds", "0.4"),
+    ("solana native token decimals", "9"),
+
+    # Networking / blockchain jargon
+    ("consensus algorithm of bitcoin", "proof of work"),
+    ("consensus of bitcoin", "proof of work"),
+    ("consensus algorithm does bitcoin use", "proof of work"),
+    ("consensus does bitcoin use", "proof of work"),
+    ("bitcoin consensus algorithm", "proof of work"),
+    ("consensus algorithm ethereum uses now", "proof of stake"),
+    ("consensus algorithm does ethereum use", "proof of stake"),
+    ("consensus does ethereum use", "proof of stake"),
+    ("ethereum current consensus", "proof of stake"),
+    ("ethereum consensus algorithm", "proof of stake"),
+
+    # ERC standards (alt phrasings)
+    ("erc is the standard for fungible tokens", "erc-20"),
+    ("standard for fungible tokens", "erc-20"),
+    ("erc is the standard for non-fungible tokens", "erc-721"),
+    ("standard for non-fungible tokens", "erc-721"),
+    ("erc is the standard for nfts", "erc-721"),
+    ("erc is the standard for multi-token", "erc-1155"),
+    ("standard for multi token", "erc-1155"),
+
     # Dates / math constants
     ("pi to 5 decimal places", "3.14159"),
     ("pi to 4 decimal places", "3.1416"),
     ("pi to 2 decimal places", "3.14"),
     ("euler's number to 4 decimal places", "2.7183"),
+
+    # Cryptocurrency founders / people
+    ("creator of dogecoin", "billy markus"),
+    ("created dogecoin", "billy markus"),
+    ("creator of litecoin", "charlie lee"),
+    ("created litecoin", "charlie lee"),
+    ("creator of solana", "anatoly yakovenko"),
+    ("created solana", "anatoly yakovenko"),
+    ("founder of binance", "cz"),
+    ("founder of coinbase", "brian armstrong"),
+    ("ceo of coinbase", "brian armstrong"),
+
+    # CS fundamentals (often puzzles)
+    ("inventor of public key cryptography", "diffie and hellman"),
+    ("who proposed public key cryptography", "diffie and hellman"),
+    ("inventor of rsa", "rivest shamir adleman"),
+    ("who invented rsa", "rivest shamir adleman"),
+    ("year rsa was published", "1977"),
+    ("year diffie-hellman was published", "1976"),
+    ("year sha-256 was published", "2001"),
+    ("year keccak was selected as sha-3", "2012"),
+    ("p versus np open", "yes"),
+
+    # Security classics
+    ("number of bits in a byte", "8"),
+    ("bits in a byte", "8"),
+    ("nibble is how many bits", "4"),
+    ("uuid length in hex", "32"),
+    ("uuid length in bits", "128"),
+    ("uuid version random", "4"),
+
+    # Curve / crypto
+    ("elliptic curve bitcoin uses", "secp256k1"),
+    ("elliptic curve ethereum uses", "secp256k1"),
+    ("elliptic curve does bitcoin use", "secp256k1"),
+    ("elliptic curve does ethereum use", "secp256k1"),
+    ("bitcoin signature curve", "secp256k1"),
+    ("bitcoin signature scheme", "ecdsa"),
+    ("ethereum signature scheme", "ecdsa"),
+    ("signature scheme does bitcoin use", "ecdsa"),
+    ("signature scheme does ethereum use", "ecdsa"),
+    ("curve for ed25519", "curve25519"),
+    ("curve25519 field prime", "2^255 - 19"),
+
+    # Rollups / L2
+    ("type of rollup optimism uses", "optimistic rollup"),
+    ("type of rollup arbitrum uses", "optimistic rollup"),
+    ("type of rollup zksync uses", "zk rollup"),
+    ("type of rollup starknet uses", "zk rollup"),
+    ("type of rollup base uses", "optimistic rollup"),
+    ("type of rollup does base use", "optimistic rollup"),
+    ("type of rollup does optimism use", "optimistic rollup"),
+    ("type of rollup does arbitrum use", "optimistic rollup"),
+    ("type of rollup does zksync use", "zk rollup"),
+    ("type of rollup does starknet use", "zk rollup"),
+    ("base is built on", "op stack"),
+
+    # Powers of 2
+    ("2^8", "256"),
+    ("2^10", "1024"),
+    ("2^16", "65536"),
+    ("2^20", "1048576"),
+    ("2^32", "4294967296"),
+    ("2^64", "18446744073709551616"),
 ]
 
 
