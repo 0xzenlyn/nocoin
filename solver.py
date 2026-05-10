@@ -34,6 +34,11 @@ except Exception:  # pragma: no cover
 
 UNSOLVED_LOG = Path(__file__).with_name("unsolved.jsonl")
 
+try:
+    import llm_solver  # optional LLM fallback
+except Exception:  # pragma: no cover
+    llm_solver = None  # type: ignore[assignment]
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -446,6 +451,16 @@ def solve(puzzle: dict) -> Optional[str]:
         except Exception:
             ans = None
         if ans is not None and str(ans).strip() != "":
+            return _norm(str(ans))
+
+    # LLM fallback: only reached if every deterministic path failed. The
+    # prompt is never executed; llm_solver treats it as untrusted data.
+    if llm_solver is not None and llm_solver.is_enabled():
+        try:
+            ans = llm_solver.solve(puzzle)
+        except Exception as e:  # pragma: no cover
+            ans = None
+        if ans:
             return _norm(str(ans))
 
     _log_unsolved(puzzle)

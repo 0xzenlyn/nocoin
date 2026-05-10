@@ -13,6 +13,31 @@ pip install -r requirements.txt
 cp .env.example .env      # tweak values if you want
 ```
 
+## Unlock maximum earnings (LLM fallback)
+
+The deterministic solver in `solver.py` handles the common categories
+(hashing, math, encoding, blockchain trivia, EIP-55). To catch the rest
+(quantum, CS trivia, logic, niche crypto history) wire in an LLM — any
+OpenAI-compatible endpoint works. The LLM is only invoked when every
+deterministic solver has returned `None`, so you don't waste tokens on
+puzzles the miner already knows how to solve.
+
+Copy `.env.example` -> `.env` and set:
+
+```
+LLM_API_KEY=sk-...
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4o-mini
+```
+
+Other providers documented in `.env.example` (Groq, OpenRouter, DeepSeek,
+Ollama). Ollama is free + local if you have the hardware.
+
+Safety: `llm_solver.py` hardens the LLM against prompt-injection — puzzles
+are delimited inside a `<puzzle>` tag, the system prompt pins the wallet and
+forbids tool use / key disclosure, and only `<answer>...</answer>` content
+is accepted. Jailbreak markers in the response are rejected.
+
 ## Run
 
 ```bash
@@ -32,8 +57,9 @@ Stop with `Ctrl+C` (the loop exits cleanly after the current puzzle).
 | `soul.md`         | Agent identity + contract with the NOCOIN API.    |
 | `miner.py`        | Main loop: fetch -> solve -> submit -> repeat.    |
 | `solver.py`       | Deterministic puzzle solver (hashing, math, ...). |
+| `llm_solver.py`   | OpenAI-compatible LLM fallback for hard puzzles.  |
 | `requirements.txt`| Python deps.                                      |
-| `.env.example`    | Config template (wallet, agent, API key).         |
+| `.env.example`    | Config template (wallet, agent, API key, LLM).    |
 
 ## Golden rules (from `soul.md`)
 
