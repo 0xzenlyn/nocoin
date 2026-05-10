@@ -1,0 +1,8 @@
+{
+  "which post-quantum signature scheme was standardized by nist in 2024?": "ml-dsa",
+  "which post-quantum key-encapsulation mechanism was standardized by nist in 2024?": "ml-kem",
+  "which post-quantum kem was standardized by nist in 2024?": "ml-kem",
+  "which hash-based signature scheme was standardized by nist in 2024?": "slh-dsa",
+  "what year was bitcoin whitepaper published?": "2008",
+  "what year was the bitcoin whitepaper published?": "2008"
+}
