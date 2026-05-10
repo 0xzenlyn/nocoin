@@ -53,6 +53,12 @@ IDLE_POLL_SECONDS = float(os.environ.get("IDLE_POLL_SECONDS", "60"))
 ACTIVE_POLL_SECONDS = float(os.environ.get("ACTIVE_POLL_SECONDS", "1.5"))
 VERBOSE = os.environ.get("VERBOSE", "0") == "1"
 
+# Supabase edge functions can cold-start very slowly (30+ s on first hit).
+# Let the user override if their network is even worse.
+HTTP_CONNECT_TIMEOUT = float(os.environ.get("HTTP_CONNECT_TIMEOUT", "15"))
+HTTP_READ_TIMEOUT = float(os.environ.get("HTTP_READ_TIMEOUT", "90"))
+MAX_RETRIES = int(os.environ.get("MAX_RETRIES", "10"))
+
 MIN_GAP_BETWEEN_SUBMITS = 1.25  # keep <=8 submissions / 10s
 
 LOG_FILE = Path(__file__).with_name("miner.log")
@@ -120,17 +126,20 @@ class Client:
         extra_headers: Optional[dict] = None,
     ) -> Optional[dict]:
         backoff = 2.0
-        for attempt in range(6):
+        for attempt in range(MAX_RETRIES):
             try:
                 resp = self.s.request(
                     method,
                     url,
                     json=json_body,
                     headers=extra_headers or {},
-                    timeout=30,
+                    timeout=(HTTP_CONNECT_TIMEOUT, HTTP_READ_TIMEOUT),
                 )
             except requests.RequestException as e:
-                log.warning("network error (%s): %s", type(e).__name__, e)
+                log.warning(
+                    "network error (%s) attempt %d/%d: %s",
+                    type(e).__name__, attempt + 1, MAX_RETRIES, e,
+                )
                 time.sleep(backoff + random.random())
                 backoff = min(backoff * 2, 60)
                 continue
@@ -179,6 +188,10 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _handle_sigint)
 
     log.info("agent=%s wallet=%s", AGENT_NAME, ETH_ADDRESS)
+    log.info(
+        "http timeouts: connect=%.0fs read=%.0fs; retries=%d",
+        HTTP_CONNECT_TIMEOUT, HTTP_READ_TIMEOUT, MAX_RETRIES,
+    )
 
     client = Client()
     solved = 0
@@ -216,7 +229,10 @@ def main() -> int:
         log.info("answer -> %r", answer)
         result = client.submit(pid, answer)
         if result is None:
-            log.error("submit returned nothing; retrying puzzle later")
+            # Submit timed out or errored. Don't mark wrong — server may have
+            # already accepted it. Re-poll; if accepted, next GET returns a
+            # different puzzle.
+            log.error("submit returned nothing; re-polling to check state")
             _sleep(ACTIVE_POLL_SECONDS)
             continue
 
